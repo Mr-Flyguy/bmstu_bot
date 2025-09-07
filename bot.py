@@ -1,5 +1,6 @@
 from telebot import *
 from dotenv import load_dotenv
+import re
 import os
 import wikipedia
 import requests
@@ -12,9 +13,9 @@ BOT_API = os.getenv('BOT_API')
 NASA_API = os.getenv('NASA_API')
 NASA_URL = os.getenv('NASA_URL')
 
-def get_apod():
+def get_apod(count):
     try:
-        response = requests.get(NASA_URL, params={'api_key': NASA_API, 'hd': True})
+        response = requests.get(NASA_URL, params={'api_key': NASA_API, 'hd': True, 'count': count})
         response.raise_for_status()
         data = response.json()
         print(data)
@@ -41,13 +42,16 @@ def start(message):
 @bot.message_handler()
 def text(message):
     try:
-        print(instance[message.chat.id])
         if message.text == 'Назад':
             instance[message.chat.id] = 'menu'
             bot.send_message(message.chat.id, 'Выбери режим: ', reply_markup=keyboard)
+            return
         elif instance[message.chat.id] == 'space':
             try:
-                bot.send_photo(message.chat.id, get_apod()['hdurl'], reply_markup=exit_keyboard)
+                for item in get_apod(message.text):
+                    bot.send_message(message.chat.id, item['title'])
+                    bot.send_message(message.chat.id, item['explanation'])
+                    bot.send_photo(message.chat.id, item['hdurl'])
             except:
                 bot.send_message(message.chat.id, 'Что-то пошло не так', reply_markup=exit_keyboard)
         elif instance[message.chat.id] == 'calc':
@@ -62,16 +66,18 @@ def text(message):
                 bot.send_message(message.chat.id, 'Что-то пошло не так', reply_markup=exit_keyboard)
         elif message.text == 'Космос':
             instance[message.chat.id] = 'space'
-            bot.send_message(message.chat.id, 'Включён режим "Космос"', reply_markup=exit_keyboard)
+            bot.send_message(message.chat.id, 'Включён режим "Космос". Введите количество изображений (1-10):', reply_markup=exit_keyboard)
         elif message.text == 'Калькулятор':
             instance[message.chat.id] = 'calc'
-            bot.send_message(message.chat.id, 'Включён режим "Калькулятор"', reply_markup=exit_keyboard)
+            bot.send_message(message.chat.id, 'Включён режим "Калькулятор". Введите выражение:', reply_markup=exit_keyboard)
         elif message.text == 'Википедия':
             instance[message.chat.id] = 'wiki'
-            bot.send_message(message.chat.id, 'Включён режим "Википедия"', reply_markup=exit_keyboard)
+            bot.send_message(message.chat.id, 'Включён режим "Википедия". Введите термин:', reply_markup=exit_keyboard)
         else:
             bot.send_message(message.chat.id, 'Выбери режим: ', reply_markup=keyboard)
     except:
         instance[message.chat.id] = 'menu'
+        bot.send_message(message.chat.id, 'Выбери режим: ', reply_markup=keyboard)
+        
 
 bot.polling(none_stop = True)
