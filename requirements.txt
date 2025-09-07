@@ -1,0 +1,4 @@
+pyTeleBot==3.7.0
+python-dotenv==0.19.0
+wikipedia==1.4.0
+requests==2.26.0
