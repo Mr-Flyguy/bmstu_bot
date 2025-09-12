@@ -15,7 +15,7 @@ NASA_URL = os.getenv('NASA_URL')
 
 def get_apod(count):
     try:
-        response = requests.get(NASA_URL, params={'api_key': NASA_API, 'hd': True, 'count': count})
+        response = requests.get(NASA_URL, params={'api_key': NASA_API, 'hd': True, 'count': (count if count <= 5 else 5)})
         response.raise_for_status()
         data = response.json()
         print(data)
@@ -28,10 +28,10 @@ bot = TeleBot(BOT_API)
 
 instance = dict()
 
-keyboard = types.ReplyKeyboardMarkup()
+keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=3)
 keyboard.row(types.KeyboardButton('Космос'), types.KeyboardButton('Калькулятор'), types.KeyboardButton('Википедия'))
 
-exit_keyboard = types.ReplyKeyboardMarkup(row_width=1)
+exit_keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=3)
 exit_keyboard.row(types.KeyboardButton('Назад'))
 
 @bot.message_handler(commands=['start'])
@@ -48,7 +48,7 @@ def text(message):
             return
         elif instance[message.chat.id] == 'space':
             try:
-                for item in get_apod(message.text):
+                for item in get_apod(int(message.text)):
                     bot.send_message(message.chat.id, item['title'])
                     bot.send_message(message.chat.id, item['explanation'])
                     bot.send_photo(message.chat.id, item['hdurl'])
@@ -66,7 +66,7 @@ def text(message):
                 bot.send_message(message.chat.id, 'Что-то пошло не так', reply_markup=exit_keyboard)
         elif message.text == 'Космос':
             instance[message.chat.id] = 'space'
-            bot.send_message(message.chat.id, 'Включён режим "Космос". Введите количество изображений (1-10):', reply_markup=exit_keyboard)
+            bot.send_message(message.chat.id, 'Включён режим "Космос". Введите количество изображений (1-5):', reply_markup=exit_keyboard)
         elif message.text == 'Калькулятор':
             instance[message.chat.id] = 'calc'
             bot.send_message(message.chat.id, 'Включён режим "Калькулятор". Введите выражение:', reply_markup=exit_keyboard)
